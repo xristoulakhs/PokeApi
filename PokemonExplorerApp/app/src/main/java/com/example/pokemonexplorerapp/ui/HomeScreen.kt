@@ -1,5 +1,6 @@
 package com.example.pokemonexplorerapp.ui
 
+import android.R.attr.onClick
 import android.media.Image
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -7,10 +8,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -22,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -31,9 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.pokemonexplorerapp.R
 import com.example.pokemonexplorerapp.model.PokemonTypeInfo
@@ -44,16 +52,16 @@ fun HomeScreen() {
     var searchQuery by remember { mutableStateOf("") }
 
     val pokemonTypes = listOf(
-        PokemonTypeInfo("Fire", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Water", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Grass", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Electric", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Dragon", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Psychic", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Ghost", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Dark", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Steel", R.drawable.pokemonscreen),
-        PokemonTypeInfo("Fairy", R.drawable.pokemonscreen),
+        PokemonTypeInfo("Fire", R.drawable.fire),
+        PokemonTypeInfo("Water", R.drawable.water),
+        PokemonTypeInfo("Grass", R.drawable.grass),
+        PokemonTypeInfo("Electric", R.drawable.electric),
+        PokemonTypeInfo("Dragon", R.drawable.dragon),
+        PokemonTypeInfo("Psychic", R.drawable.psychic),
+        PokemonTypeInfo("Ghost", R.drawable.ghost),
+        PokemonTypeInfo("Dark", R.drawable.dark),
+        PokemonTypeInfo("Steel", R.drawable.steel),
+        PokemonTypeInfo("Fairy", R.drawable.fairy),
     )
 
     Scaffold(
@@ -91,24 +99,28 @@ fun HomeScreen() {
 
 @Composable
 fun PokemonTypeGridItem(item: PokemonTypeInfo) {
-    Box(
-        contentAlignment = Alignment.Center,
+    Surface(
         modifier = Modifier
-            .size(width = 40.dp, height = 100.dp) // fixed width & height
-            .background(Color.White)
-    ) {
+            .size(width = 40.dp, height = 100.dp),
+        shape = RoundedCornerShape(10.dp),
+        shadowElevation = 4.dp,
+        color = Color.White,
+        onClick = {  }
+    ){
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(item.pokemonType)
+            Image(
+                painter = painterResource(id = item.typeImageId),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                contentScale = ContentScale.Crop
+            )
 
-//            Image(
-//                painter = painterResource(id = item.typeImageId),
-//                contentDescription = null,
-//                modifier = Modifier.fillMaxSize(),
-//                contentScale = ContentScale.Crop
-//            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(item.pokemonType,style = TextStyle(fontWeight = FontWeight.Bold))
         }
     }
 }
