@@ -1,17 +1,20 @@
 package com.example.pokemonexplorerapp.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.pokemonexplorerapp.ui.screens.HomeScreen
+import com.example.pokemonexplorerapp.ui.screens.home.HomeScreen
 import com.example.pokemonexplorerapp.ui.screens.ResultsScreen
 import com.example.pokemonexplorerapp.ui.screens.WelcomeScreen
+import com.example.pokemonexplorerapp.ui.screens.home.HomeViewModel
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
 
-    var startDestination = "welcome"
+    val startDestination = "welcome"
+    val homeViewModel: HomeViewModel = remember { HomeViewModel() }
 
     NavHost(navController = navController, startDestination = startDestination) {
         //welcome screen
@@ -21,7 +24,7 @@ fun AppNavigation(navController: NavHostController) {
 
         //welcome screen
         composable("home") {
-            HomeScreen(navController = navController)
+            HomeScreen(navController = navController, homeViewModel = homeViewModel)
         }
 
         //results

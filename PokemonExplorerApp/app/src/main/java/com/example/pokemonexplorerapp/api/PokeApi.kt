@@ -8,8 +8,8 @@ object RetrofitInstance {
     val api: PokeApiService by lazy {
         Retrofit.Builder()
             .baseUrl("https://pokeapi.co/api/v2/")
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create()) //json
             .build()
-            .create(PokeApiService::class.java)
+            .create(PokeApiService::class.java) //interface implementation
     }
 }
