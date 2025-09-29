@@ -9,21 +9,20 @@ val Pink80 = Color(0xFFEFB8C8)
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
-
-val DarkBlue = Color(0xFF5C6BC0)
-val Amber50 = Color(0xFFFFF8E1)
-
-val signOutBtnRed = Color(0xFFEF5350)
-
-val chatSentBlue = Color(0xff2979ff)
-val chatReceivedGray = Color(0xffe8eaf6)
-
-val lightPremiumYellow = Color(0xfffffde7)
-
-//packages
-val boostBlue = Color(0xFF1565C0)
-val premiumYellow = Color(0xFFFFD600)
-val inactiveGray = Color(0xffeeeeee)
-
-//LIGHT AND DARK THEMES
 val lightBackground = Color(0xFFFAFAFA)
+
+//pokemon card colors
+val lightYellow = Color(0xFFFFD54F) //border
+
+//pokemon types colors
+val fireClr = Color(0xFFFFB74D)
+val waterClr = Color(0xFF81D4FA)
+val grassClr = Color(0xFF81C784)
+val electricClr = Color(0xFFFFEB3B)
+val dragonClr = Color(0xFF1976D2)
+val psychicClr = Color(0xFFEF5350)
+val ghostClr = Color(0xFF9575CD)
+val darkClr = Color(0xFF90A4AE)
+val steelClr = Color(0xFF0277BD)
+val fairyClr = Color(0xFFF48FB1)
+

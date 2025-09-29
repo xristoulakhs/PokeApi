@@ -3,8 +3,10 @@ package com.example.pokemonexplorerapp.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.pokemonexplorerapp.ui.screens.home.HomeScreen
 import com.example.pokemonexplorerapp.ui.screens.ResultsScreen
 import com.example.pokemonexplorerapp.ui.screens.WelcomeScreen
@@ -28,8 +30,12 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         //results
-        composable("results"){
-            ResultsScreen(navController = navController)
+        composable("results/{searchContext}",
+            arguments = listOf(navArgument("searchContext") { type = NavType.StringType })
+            ){
+            backStackEntry ->
+            val searchContext = backStackEntry.arguments?.getString("searchContext")
+            ResultsScreen(navController = navController,homeViewModel,searchContext)
         }
     }
 }

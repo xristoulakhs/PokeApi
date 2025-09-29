@@ -2,11 +2,18 @@ package com.example.pokemonexplorerapp.api
 
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface PokeApiService {
     @GET("pokemon/{name}")
-    suspend fun getPokemon(@Path("name") name: String): PokemonResponse
+    suspend fun getPokemon(
+        @Path("name") name: String
+    ): PokemonResponse
 
     @GET("type/{type}")
-    suspend fun getPokemonByType(@Path("type") type: String): PokemonTypeResponse
+    suspend fun getPokemonByType(
+        @Path("type") type: String,
+        @Query("offset") offset: Int,
+        @Query("limit") limit: Int
+    ): PokemonTypeResponse
 }

@@ -1,7 +1,9 @@
 package com.example.pokemonexplorerapp.ui.screens.home
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,7 +51,7 @@ import com.example.pokemonexplorerapp.model.PokemonTypeInfo
 fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel) {
     var searchQuery by remember { mutableStateOf("") }
 
-    var hasResults by remember { mutableStateOf(true) }
+    var searchError by remember { mutableStateOf(false) }
 
     val pokemonTypes = listOf(
         PokemonTypeInfo("Fire", R.drawable.fire),
@@ -154,7 +156,16 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel) {
             )
 
             ElevatedButton(
-                onClick = { },
+                onClick = {
+                    if (searchQuery.trim() !=""){
+                        homeViewModel.fetchPokemonByName(searchQuery.lowercase().trim())
+                        val encodedString = Uri.encode("name")
+                        navController.navigate("results/$encodedString")
+                    }
+                    else{
+                        searchError = true
+                    }
+                },
                 modifier = Modifier.padding(top = 16.dp),
                 colors = ButtonDefaults.elevatedButtonColors(
                     containerColor = Color(0xFF8ACBFF),   // background color
@@ -165,19 +176,28 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel) {
                 Text("Search")
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if (searchError) {
+                Box(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .height(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Please provide a valid pokemon name or type.",
+                        style = TextStyle(
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold,
+                            fontStyle = FontStyle.Italic
+                        )
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
-            //error message
-            if (!hasResults) {
-                Text(
-                    "There are no pokemon with this name or type.",
-                    style = TextStyle(
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold,
-                        fontStyle = FontStyle.Italic
-                    )
-                )
-            }
         }
     }
 }
@@ -188,6 +208,8 @@ fun PokemonTypeGridItem(
     navController: NavController,
     homeViewModel: HomeViewModel
 ) {
+    val typeState by homeViewModel.type.collectAsState() //type selected
+
     Surface(
         modifier = Modifier
             .size(width = 40.dp, height = 100.dp),
@@ -195,8 +217,10 @@ fun PokemonTypeGridItem(
         shadowElevation = 4.dp,
         color = Color.White,
         onClick = {
+
             homeViewModel.fetchPokemonByType(item.pokemonType)
-            navController.navigate("results")
+            val encodedString = Uri.encode("type")
+            navController.navigate("results/$encodedString")
         }
     ) {
         Column(
