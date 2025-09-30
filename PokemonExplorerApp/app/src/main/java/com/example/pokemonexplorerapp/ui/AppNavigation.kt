@@ -30,12 +30,9 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         //results
-        composable("results/{searchContext}",
-            arguments = listOf(navArgument("searchContext") { type = NavType.StringType })
+        composable("results",
             ){
-            backStackEntry ->
-            val searchContext = backStackEntry.arguments?.getString("searchContext")
-            ResultsScreen(navController = navController,homeViewModel,searchContext)
+            ResultsScreen(navController = navController,homeViewModel)
         }
     }
 }

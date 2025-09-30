@@ -13,7 +13,5 @@ interface PokeApiService {
     @GET("type/{type}")
     suspend fun getPokemonByType(
         @Path("type") type: String,
-        @Query("offset") offset: Int,
-        @Query("limit") limit: Int
     ): PokemonTypeResponse
 }

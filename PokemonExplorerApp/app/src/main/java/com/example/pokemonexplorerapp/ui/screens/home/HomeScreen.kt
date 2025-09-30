@@ -1,6 +1,7 @@
 package com.example.pokemonexplorerapp.ui.screens.home
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pokemonexplorerapp.R
 import com.example.pokemonexplorerapp.model.PokemonTypeInfo
@@ -77,34 +79,13 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Divider(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp),
-                    color = Color.Gray
-                )
-
-                Text(
-                    text = "Search by Type",
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Divider(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp),
-                    color = Color.Gray
-                )
-            }
-
+            Text(
+                "Choose the Pokemon Type",
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp)
+            )
             //boxes with pokemon types
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 100.dp),
+                columns = GridCells.Adaptive(minSize = 150.dp),
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -114,89 +95,6 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel) {
                     PokemonTypeGridItem(pokemonTypes[index], navController, homeViewModel)
                 }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Divider(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp),
-                    color = Color.Gray
-                )
-
-                Text(
-                    text = "Custom Search",
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Divider(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp),
-                    color = Color.Gray
-                )
-            }
-
-            //search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, end = 16.dp, start = 16.dp, bottom = 5.dp),
-                placeholder = { Text("Search Pokémon") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search Icon") },
-                singleLine = true,
-                shape = RoundedCornerShape(24.dp),
-            )
-
-            ElevatedButton(
-                onClick = {
-                    if (searchQuery.trim() !=""){
-                        homeViewModel.fetchPokemonByName(searchQuery.lowercase().trim())
-                        val encodedString = Uri.encode("name")
-                        navController.navigate("results/$encodedString")
-                    }
-                    else{
-                        searchError = true
-                    }
-                },
-                modifier = Modifier.padding(top = 16.dp),
-                colors = ButtonDefaults.elevatedButtonColors(
-                    containerColor = Color(0xFF8ACBFF),   // background color
-                    contentColor = Color.Black,     // text & icon color
-                )
-
-            ) {
-                Text("Search")
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            if (searchError) {
-                Box(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .height(40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "Please provide a valid pokemon name or type.",
-                        style = TextStyle(
-                            color = Color.Red,
-                            fontWeight = FontWeight.Bold,
-                            fontStyle = FontStyle.Italic
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
 
         }
     }
@@ -208,8 +106,6 @@ fun PokemonTypeGridItem(
     navController: NavController,
     homeViewModel: HomeViewModel
 ) {
-    val typeState by homeViewModel.type.collectAsState() //type selected
-
     Surface(
         modifier = Modifier
             .size(width = 40.dp, height = 100.dp),
@@ -217,10 +113,8 @@ fun PokemonTypeGridItem(
         shadowElevation = 4.dp,
         color = Color.White,
         onClick = {
-
-            homeViewModel.fetchPokemonByType(item.pokemonType)
-            val encodedString = Uri.encode("type")
-            navController.navigate("results/$encodedString")
+            homeViewModel.fetchPokemonByType(item.pokemonType.lowercase())
+            navController.navigate("results")
         }
     ) {
         Column(

@@ -1,12 +1,12 @@
 package com.example.pokemonexplorerapp.ui.screens
 
-import android.R.attr.contentDescription
-import android.R.attr.name
-import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -40,6 +42,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,12 +58,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.pokemonexplorerapp.R
+import com.example.pokemonexplorerapp.api.Pokemon
 import com.example.pokemonexplorerapp.api.PokemonResponse
 import com.example.pokemonexplorerapp.api.PokemonTypeResponse
+import com.example.pokemonexplorerapp.api.RetrofitInstance
 import com.example.pokemonexplorerapp.theme.lightYellow
 import com.example.pokemonexplorerapp.ui.screens.home.HomeViewModel
-import java.lang.ProcessBuilder.Redirect.to
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,20 +73,17 @@ import java.lang.ProcessBuilder.Redirect.to
 fun ResultsScreen(
     navController: NavController,
     homeViewModel: HomeViewModel,
-    searchContext: String?
 ) {
-    val pokemon by homeViewModel.pokemon.collectAsState()
-    val types by homeViewModel.type.collectAsState()
+    val pokemonNamesList by homeViewModel.pokemonNamesList.collectAsState()
+
+    var visibleCount by remember { mutableIntStateOf(10) }
+    val displayedList = homeViewModel.pokemonList.collectAsState().value.take(visibleCount)
 
     // Compute results
-    val hasResults = pokemon != null || types.isNotEmpty()
-    val isLoading = pokemon == null && types.isEmpty() // show spinner if nothing loaded yet
 
-    val itemsList: List<Any> = when (searchContext) {
-        "type" -> types // List<PokemonTypeResponse>
-        "name" -> pokemon?.let { listOf(it) } ?: emptyList() // wrap single PokemonResponse
-        else -> emptyList()
-    }
+    val isLoading by homeViewModel.isLoadingFlow.collectAsState()
+
+    val itemsList: List<Pokemon> = pokemonNamesList
 
     val typeColorPalette: Map<String, Color> = mapOf(
         "fire" to Color(0xFFFFB74D),
@@ -116,6 +118,7 @@ fun ResultsScreen(
         contentWindowInsets = WindowInsets.safeDrawing
     ) { paddingValues ->
 
+
         // Loading spinner
         if (isLoading) {
             Box(
@@ -126,44 +129,61 @@ fun ResultsScreen(
             ) {
                 CircularProgressIndicator()
             }
-        }
-        // No results error
-        else if (!hasResults) {
-            Box(
+        } else {
+            Column(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .scrollable(rememberScrollState(), orientation = Orientation.Vertical)
             ) {
-                Text(
-                    "There are no pokemon with this name or type.",
-                    style = TextStyle(
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold,
-                        fontStyle = FontStyle.Italic
-                    )
-                )
-            }
-        }
-        // Show results grid
-        else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 150.dp),
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(horizontal = 10.dp),
-                contentPadding = PaddingValues(vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(itemsList) { item ->
-
-                    when (item) {
-                        is PokemonResponse -> PokemonResultItem(item, typeColorPalette)
-                        is PokemonTypeResponse -> PokemonResultItem(item, typeColorPalette)
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 150.dp),
+                    modifier = Modifier
+                        .weight(1f) // take available space
+                        .padding(horizontal = 10.dp),
+                    contentPadding = PaddingValues(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(displayedList) { item ->
+                        PokemonResultItem(item, typeColorPalette)
                     }
+
+                    if (displayedList.size < pokemonNamesList.size) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Button(
+                                    onClick = {
+                                        homeViewModel.loadMorePokemon(visibleCount)
+                                        visibleCount += 10
+                                    }
+                                ) {
+                                    Text("Load More")
+                                }
+                            }
+                        }
+                    }
+
                 }
+
+//                    Button(
+//                        onClick = {
+//                            homeViewModel.loadMorePokemon(visibleCount)
+//                            visibleCount += 10
+//                        },
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(16.dp)
+//                    ) {
+//                        Text("Load More")
+//                    }
             }
+
         }
     }
 }
@@ -176,13 +196,12 @@ fun PokemonResultItem(
     val sHeight = LocalConfiguration.current.screenHeightDp
     val sWidth = LocalConfiguration.current.screenWidthDp
 
-    val primaryType = response.types.firstOrNull()?.type?.name ?: "normal"
+    val primaryType = response.name
     val typeColor = colorPalette[primaryType] ?: Color(0xFFA1887F)
 
     Surface(
         modifier = Modifier
-            .height(135.dp)
-            .clickable { /* Handle click */ },
+            .height(135.dp),
         shape = RoundedCornerShape(10.dp),
         shadowElevation = 4.dp,
         color = Color.White,
@@ -228,9 +247,15 @@ fun PokemonResultItem(
                 )
                 {
                     Spacer(modifier = Modifier.height(10.dp))
-                    Row() {
-                        Text(response.name)
-                        Row() {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.width((sWidth * 0.6).dp)
+                    ) {
+                        Text(
+                            response.name.replaceFirstChar(Char::titlecase),
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp)
+                        )
+                        Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 "HP",
                                 style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -241,20 +266,21 @@ fun PokemonResultItem(
                             )
                         }
                     }
-                    Box(
-                        modifier = Modifier.border(
-                            BorderStroke(5.dp, lightYellow),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    ) {
-                        AsyncImage(
-                            model = response.sprites.front_default,
-                            contentDescription = "pokemon image",
-                            modifier = Modifier
-                                .width((sWidth * 0.6).dp)
-                                .height(200.dp),
-
+                    Surface(
+                        modifier = Modifier
+                            .border(
+                                BorderStroke(5.dp, lightYellow),
                             )
+                            .background(Color.White),
+                        shadowElevation = 4.dp,
+                    ) {
+//                        AsyncImage(
+//                            model = response.sprites.front_default,
+//                            contentDescription = "pokemon image",
+//                            modifier = Modifier
+//                                .width((sWidth * 0.7).dp)
+//                                .height(200.dp)
+//                        )
                     }
 
                 }
@@ -263,63 +289,3 @@ fun PokemonResultItem(
     }
 }
 
-@Composable
-fun PokemonResultItem(
-    response: PokemonTypeResponse, colorPalette: Map<String, Color>
-) {
-
-    Surface(
-        modifier = Modifier
-            .height(135.dp)
-            .clickable { /* Handle click */ },
-        shape = RoundedCornerShape(10.dp),
-        shadowElevation = 4.dp,
-        color = Color.White,
-        onClick = {
-
-        }
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            AsyncImage(
-                model = "fwewgwwbw",
-                contentDescription = "pokemon image",
-                modifier = Modifier.size(100.dp),
-
-                )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text("nfjkenfkjwnkfw", style = TextStyle(fontWeight = FontWeight.Bold))
-        }
-    }
-
-    var showDialog by remember { mutableStateOf(false) }
-
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White,
-                tonalElevation = 6.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("mfklemfklewfkew", style = MaterialTheme.typography.titleLarge)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("This is a custom dialog example.")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(onClick = { showDialog = false }) {
-                        Text("Close")
-                    }
-                }
-            }
-        }
-    }
-}
