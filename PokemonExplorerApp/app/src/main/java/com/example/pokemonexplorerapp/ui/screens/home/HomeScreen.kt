@@ -51,9 +51,6 @@ import com.example.pokemonexplorerapp.model.PokemonTypeInfo
 
 @Composable
 fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel) {
-    var searchQuery by remember { mutableStateOf("") }
-
-    var searchError by remember { mutableStateOf(false) }
 
     val pokemonTypes = listOf(
         PokemonTypeInfo("Fire", R.drawable.fire),

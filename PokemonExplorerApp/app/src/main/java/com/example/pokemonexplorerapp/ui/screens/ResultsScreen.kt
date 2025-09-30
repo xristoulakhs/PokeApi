@@ -79,11 +79,7 @@ fun ResultsScreen(
     var visibleCount by remember { mutableIntStateOf(10) }
     val displayedList = homeViewModel.pokemonList.collectAsState().value.take(visibleCount)
 
-    // Compute results
-
     val isLoading by homeViewModel.isLoadingFlow.collectAsState()
-
-    val itemsList: List<Pokemon> = pokemonNamesList
 
     val typeColorPalette: Map<String, Color> = mapOf(
         "fire" to Color(0xFFFFB74D),
@@ -170,18 +166,6 @@ fun ResultsScreen(
                     }
 
                 }
-
-//                    Button(
-//                        onClick = {
-//                            homeViewModel.loadMorePokemon(visibleCount)
-//                            visibleCount += 10
-//                        },
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(16.dp)
-//                    ) {
-//                        Text("Load More")
-//                    }
             }
 
         }
@@ -196,7 +180,7 @@ fun PokemonResultItem(
     val sHeight = LocalConfiguration.current.screenHeightDp
     val sWidth = LocalConfiguration.current.screenWidthDp
 
-    val primaryType = response.name
+    val primaryType = response.types.firstOrNull()?.type?.name?.lowercase()
     val typeColor = colorPalette[primaryType] ?: Color(0xFFA1887F)
 
     Surface(
@@ -246,7 +230,7 @@ fun PokemonResultItem(
                     verticalArrangement = Arrangement.Top
                 )
                 {
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(15.dp))
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.width((sWidth * 0.6).dp)
@@ -274,13 +258,13 @@ fun PokemonResultItem(
                             .background(Color.White),
                         shadowElevation = 4.dp,
                     ) {
-//                        AsyncImage(
-//                            model = response.sprites.front_default,
-//                            contentDescription = "pokemon image",
-//                            modifier = Modifier
-//                                .width((sWidth * 0.7).dp)
-//                                .height(200.dp)
-//                        )
+                        AsyncImage(
+                            model = response.sprites.front_default,
+                            contentDescription = "pokemon image",
+                            modifier = Modifier
+                                .width((sWidth * 0.7).dp)
+                                .height(200.dp)
+                        )
                     }
 
                 }
