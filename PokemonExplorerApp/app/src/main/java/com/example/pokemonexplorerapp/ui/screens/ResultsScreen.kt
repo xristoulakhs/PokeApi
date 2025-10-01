@@ -2,9 +2,9 @@ package com.example.pokemonexplorerapp.ui.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,12 +21,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.Button
@@ -34,7 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,23 +50,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.pokemonexplorerapp.api.Pokemon
+import com.example.pokemonexplorerapp.R
 import com.example.pokemonexplorerapp.api.PokemonResponse
-import com.example.pokemonexplorerapp.api.PokemonTypeResponse
-import com.example.pokemonexplorerapp.api.RetrofitInstance
 import com.example.pokemonexplorerapp.theme.lightYellow
 import com.example.pokemonexplorerapp.ui.screens.home.HomeViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.example.pokemonexplorerapp.values.icons
+import com.example.pokemonexplorerapp.values.typeColorPalette
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +75,7 @@ import kotlinx.coroutines.flow.StateFlow
 fun ResultsScreen(
     navController: NavController,
     homeViewModel: HomeViewModel,
+    pokemonType: String?,
 ) {
     val pokemonNamesList by homeViewModel.pokemonNamesList.collectAsState()
 
@@ -81,25 +84,20 @@ fun ResultsScreen(
 
     val isLoading by homeViewModel.isLoadingFlow.collectAsState()
 
-    val typeColorPalette: Map<String, Color> = mapOf(
-        "fire" to Color(0xFFFFB74D),
-        "water" to Color(0xFF81D4FA),
-        "grass" to Color(0xFF81C784),
-        "electric" to Color(0xFFFFEB3B),
-        "dragon" to Color(0xFF1976D2),
-        "psychic" to Color(0xFFEF5350),
-        "ghost" to Color(0xFF9575CD),
-        "dark" to Color(0xFF90A4AE),
-        "steel" to Color(0xFF0277BD),
-        "fairy" to Color(0xFFF48FB1),
-    )
+    val typeColorPalette: Map<String, Color> = typeColorPalette
+
+    var searchQuery by remember { mutableStateOf("") }
+
+    var hasSearched by remember { mutableStateOf(false) }
+
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Pokemon Results") },
+                title = { Text("") },
                 navigationIcon = {
                     IconButton(onClick = {
+                        hasSearched= false
                         homeViewModel.reset()
                         navController.popBackStack()
                     }) {
@@ -132,6 +130,53 @@ fun ResultsScreen(
                     .fillMaxSize()
                     .scrollable(rememberScrollState(), orientation = Orientation.Vertical)
             ) {
+
+                // Search field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search Pokémon") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 15.dp, end = 15.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            hasSearched = true
+                            // search on enter press
+                            if (searchQuery.trim() == "" || searchQuery == null) {
+                                homeViewModel.fetchPokemonByType(pokemonType?.lowercase() ?: "")
+                            } else {
+                                homeViewModel.pokemonSearch(searchQuery.lowercase().trim())
+                            }
+                        }
+                    )
+                )
+
+                Text(
+                    "Hint, an empty search will return all the pokemons of this type!",
+                    fontStyle = FontStyle.Italic,
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(start = 15.dp, end = 15.dp)
+                )
+                
+                Spacer(modifier=Modifier.height(20.dp))
+
+                if (homeViewModel.pokemonList.collectAsState().value.isEmpty() && hasSearched) {
+                    Text(
+                        "Invalid Pokemon, try searching a Pokemon of this type!",
+                        style = TextStyle(
+                            color = Color.Red,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 18.sp
+                        ),
+                        modifier = Modifier.padding(start = 15.dp, end = 15.dp,top = 20.dp)
+                    )
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 150.dp),
                     modifier = Modifier
@@ -142,10 +187,10 @@ fun ResultsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(displayedList) { item ->
-                        PokemonResultItem(item, typeColorPalette)
+                        PokemonResultItem(item, typeColorPalette, pokemonType)
                     }
 
-                    if (displayedList.size < pokemonNamesList.size) {
+                    if (displayedList.size < pokemonNamesList.size && displayedList.size>=10 ) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -174,14 +219,15 @@ fun ResultsScreen(
 
 @Composable
 fun PokemonResultItem(
-    response: PokemonResponse, colorPalette: Map<String, Color>,
+    response: PokemonResponse, colorPalette: Map<String, Color>, pokemonType: String?
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val sHeight = LocalConfiguration.current.screenHeightDp
     val sWidth = LocalConfiguration.current.screenWidthDp
 
-    val primaryType = response.types.firstOrNull()?.type?.name?.lowercase()
-    val typeColor = colorPalette[primaryType] ?: Color(0xFFA1887F)
+    val typeColor = colorPalette[pokemonType?.lowercase()] ?: Color(0xFFA1887F)
+
+    val icon = icons[pokemonType?.lowercase()]
 
     Surface(
         modifier = Modifier
@@ -213,63 +259,120 @@ fun PokemonResultItem(
     }
 
     if (showDialog) {
-        Dialog(
-            onDismissRequest = { showDialog = false }
+        PokemonCardDialog(typeColor, sWidth, sHeight, response, icon) { showDialog = false }
+    }
+}
+
+@Composable
+fun PokemonCardDialog(
+    typeColor: Color,
+    sWidth: Int,
+    sHeight: Int,
+    response: PokemonResponse,
+    icon: Int?,
+    onClick: () -> Unit
+) {
+    val statsStyle: TextStyle = TextStyle(fontWeight = FontWeight.Bold, fontSize = 30.sp)
+
+    Dialog(
+        onDismissRequest = { onClick() }
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = typeColor,
+            tonalElevation = 6.dp,
+            border = BorderStroke(10.dp, lightYellow),
+            modifier = Modifier
+                .height((sHeight * 0.6).dp)
+                .width((sWidth * 0.9).dp)
         ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = typeColor,
-                tonalElevation = 6.dp,
-                border = BorderStroke(10.dp, lightYellow),
-                modifier = Modifier
-                    .height((sHeight * 0.6).dp)
-                    .width((sWidth * 0.9).dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
-                )
-                {
-                    Spacer(modifier = Modifier.height(15.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.width((sWidth * 0.6).dp)
-                    ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            )
+            {
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .width((sWidth * 0.6).dp)
+                        .padding(bottom = 3.dp)
+                ) {
+                    Text(
+                        response.name.replaceFirstChar(Char::titlecase),
+                        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp)
+                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            response.name.replaceFirstChar(Char::titlecase),
+                            "HP",
+                            style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            response.stats[0].base_stat.toString(),
                             style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp)
                         )
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                "HP",
-                                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                response.stats[0].base_stat.toString(),
-                                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp)
-                            )
-                        }
-                    }
-                    Surface(
-                        modifier = Modifier
-                            .border(
-                                BorderStroke(5.dp, lightYellow),
-                            )
-                            .background(Color.White),
-                        shadowElevation = 4.dp,
-                    ) {
-                        AsyncImage(
-                            model = response.sprites.front_default,
-                            contentDescription = "pokemon image",
-                            modifier = Modifier
-                                .width((sWidth * 0.7).dp)
-                                .height(200.dp)
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Image(
+                            painter = painterResource(
+                                id = icon ?: R.drawable.electric
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier.size(25.dp),
+                            contentScale = ContentScale.Crop
                         )
                     }
+                }
 
+                Surface(
+                    modifier = Modifier
+                        .border(
+                            BorderStroke(5.dp, lightYellow),
+                        )
+                        .background(Color.White),
+                    shadowElevation = 4.dp,
+                ) {
+                    AsyncImage(
+                        model = response.sprites.front_default,
+                        contentDescription = "pokemon image",
+                        modifier = Modifier
+                            .width((sWidth * 0.7).dp)
+                            .height(200.dp)
+                    )
+                }
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.height(100.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 25.dp, end = 25.dp)
+                    )
+                    {
+                        Text("Attack", style = statsStyle)
+                        Text(response.stats[1].base_stat.toString(), style = statsStyle)
+                    }
+                }
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.height(100.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 25.dp, end = 25.dp)
+                    )
+                    {
+                        Text("Defence", style = statsStyle)
+                        Text(response.stats[2].base_stat.toString(), style = statsStyle)
+                    }
                 }
             }
         }
     }
 }
-

@@ -30,9 +30,11 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         //results
-        composable("results",
+        composable("results/{typeName}",
             ){
-            ResultsScreen(navController = navController,homeViewModel)
+            backStackEntry ->
+            val type = backStackEntry.arguments?.getString("typeName")
+            ResultsScreen(navController = navController,homeViewModel,type)
         }
     }
 }

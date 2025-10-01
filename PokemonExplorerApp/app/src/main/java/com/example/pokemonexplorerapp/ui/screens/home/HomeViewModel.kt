@@ -1,6 +1,8 @@
 package com.example.pokemonexplorerapp.ui.screens.home
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pokemonexplorerapp.api.Pokemon
@@ -22,17 +24,6 @@ class HomeViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoadingFlow: StateFlow<Boolean> = _isLoading
 
-    // Fetch a single Pokémon by name
-    fun fetchPokemonByName(name: String) {
-        viewModelScope.launch {
-            try {
-                val result = RetrofitInstance.api.getPokemon(name.lowercase())
-                _pokemonList.value = listOf(result)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
     // Fetch all Pokémon of a given type
     fun fetchPokemonByType(type: String) {
@@ -50,6 +41,31 @@ class HomeViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun pokemonSearch(query: String) {
+        if (_isLoading.value) return
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            try {
+                // Filter current list (no need to keep original)
+                val filtered = _pokemonNamesList.value.filter {
+                    it.pokemon.name.contains(query, ignoreCase = true)
+                }
+
+                val pokemons = filtered.map { p ->
+                    RetrofitInstance.api.getPokemon(p.pokemon.name)
+                }
+                _pokemonList.value = pokemons
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _pokemonList.value = emptyList()
+                _pokemonNamesList.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
